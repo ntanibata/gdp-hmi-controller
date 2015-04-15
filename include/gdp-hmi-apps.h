@@ -43,7 +43,7 @@
 #define AM_DEMO                         4
 #define AM_DEMO_SURFACE_ID              20
 #define AM_DEMO_LAYER_ID                400
-#define AM_DEMO_UNIT                    "AudioManager_PoC.service"
+#define AM_DEMO_UNIT                    "AudioManager_Monitor.service"
 
 #define BROWSER_POC                     5
 #define BROWSER_POC_SURFACE_ID          30
