@@ -31,9 +31,12 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
     QQuickView view(QUrl(QStringLiteral("qrc:/main.qml")));
+    QQuickView view2(QUrl(QStringLiteral("qrc:/main.qml")));
 
     view.setProperty("IVI-Surface-ID", GDP_BACKGROUND_SURFACE_ID);
+    view2.setProperty("IVI-Surface-ID", GDP_BACKGROUND_SURFACE_ID + 1000);
     view.show();
+    view2.show();
 
     return app.exec();
 }
