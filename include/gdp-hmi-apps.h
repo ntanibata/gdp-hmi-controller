@@ -68,4 +68,7 @@
 #define GDP_MAX_LAYER_ID                900
 #define GDP_LAYER_ID_INCR               100
 
+#define GDP_BACKGROUND2_SURFACE_ID      1002
+#define GDP_BACKGROUND2_LAYER_ID        250
+
 #endif // GDP_HMI_APP_H

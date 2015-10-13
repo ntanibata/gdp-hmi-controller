@@ -364,6 +364,150 @@ static void launcher_show(const struct gdp_surface_context gdp_surface)
     surface_mark_visible(GDP_LAUNCHER);
 }
 
+static void background2_show()
+{
+    t_ilm_layer  layerid = GDP_BACKGROUND2_LAYER_ID;
+    ilmErrorTypes callResult = ILM_FAILED;
+    t_ilm_surface surfaceIdArray[] = {GDP_BACKGROUND2_SURFACE_ID};
+    t_ilm_layer   layerIdArray[]   = {GDP_BACKGROUND2_LAYER_ID};
+
+    callResult = ilm_layerCreateWithDimension(&layerid,
+        TOUCH_SCREEN_WIDTH, TOUCH_SCREEN_HEIGHT);
+    callResult = ilm_commitChanges();
+
+    callResult = ilm_surfaceSetSourceRectangle(
+        GDP_BACKGROUND2_SURFACE_ID, 0, 0, TOUCH_SCREEN_WIDTH, TOUCH_SCREEN_HEIGHT);
+    callResult = ilm_surfaceSetDestinationRectangle(GDP_BACKGROUND2_SURFACE_ID,
+        0, 0, TOUCH_SCREEN_WIDTH, TOUCH_SCREEN_HEIGHT);
+    callResult = ilm_surfaceSetVisibility(GDP_BACKGROUND2_SURFACE_ID, ILM_TRUE);
+    callResult = ilm_surfaceSetOpacity(GDP_BACKGROUND2_SURFACE_ID, 1.0f);
+    callResult = ilm_commitChanges();
+    sd_journal_print(LOG_DEBUG, "background2_show - input focus on\n");
+    sd_journal_print(LOG_DEBUG, "background2_show - render order - layer\n");
+    callResult = ilm_layerSetDestinationRectangle(GDP_BACKGROUND2_LAYER_ID,
+        0, 0, TOUCH_SCREEN_WIDTH, TOUCH_SCREEN_HEIGHT);
+    callResult = ilm_layerSetRenderOrder(GDP_BACKGROUND2_LAYER_ID,
+        surfaceIdArray, 1);
+    callResult = ilm_layerSetVisibility(GDP_BACKGROUND2_LAYER_ID,
+        ILM_TRUE);
+    callResult = ilm_commitChanges();
+
+    callResult = ilm_displaySetRenderOrder((t_ilm_display)0,
+         layerIdArray, 1);
+ 
+     callResult = ilm_commitChanges();
+}
+
+static void background_show(const struct gdp_surface_context gdp_surface)
+{
+    ilmErrorTypes callResult = ILM_FAILED;
+    t_ilm_surface surfaceIdArray[] = {GDP_BACKGROUND_SURFACE_ID};
+    t_ilm_layer   layerIdArray[]   = {GDP_BACKGROUND_LAYER_ID,
+                                      GDP_PANEL_LAYER_ID};
+
+    sd_journal_print(LOG_DEBUG, "background_show"
+        "(surface = %u, layer = %u)\n",
+        gdp_surface.id_surface, gdp_surface.id_layer);
+
+    callResult = ilm_surfaceSetSourceRectangle(
+        gdp_surface.id_surface, 0, 0, TOUCH_SCREEN_WIDTH, TOUCH_SCREEN_HEIGHT);
+    callResult = ilm_surfaceSetDestinationRectangle(
+        gdp_surface.id_surface, 0, 0, screenWidth, screenHeight);
+    callResult = ilm_surfaceSetVisibility(
+        gdp_surface.id_surface, ILM_TRUE);
+    callResult = ilm_surfaceSetOpacity(
+        gdp_surface.id_surface, 1.0f);
+    callResult = ilm_commitChanges();
+    sd_journal_print(LOG_DEBUG, "background_show - input focus on\n");
+    sd_journal_print(LOG_DEBUG, "background_show - render order - layer\n");
+    callResult = ilm_layerSetDestinationRectangle(
+        gdp_surface.id_layer, 0, 0, 960, 1080);
+    callResult = ilm_layerSetOrientation(
+        gdp_surface.id_layer, ILM_NINETY);
+    callResult = ilm_layerSetRenderOrder(gdp_surface.id_layer,
+        surfaceIdArray, 1);
+    callResult = ilm_layerSetVisibility(gdp_surface.id_layer,
+        ILM_TRUE);
+    callResult = ilm_commitChanges();
+
+    sd_journal_print(LOG_DEBUG, "background_show - render order - screen %u\n",
+        screenID);
+    callResult = ilm_displaySetRenderOrder((t_ilm_display)1,
+        layerIdArray, 2);
+
+    callResult = ilm_commitChanges();
+     surface_mark_visible(GDP_LAUNCHER);
+    background2_show();
+}
+
+static void application_show(const int index)
+{
+    ilmErrorTypes callResult = ILM_FAILED;
+    const struct gdp_surface_context gdp_surface = gdp_surfaces[index];
+    t_ilm_surface surfaceIdArray[] = {gdp_surface.id_surface};
+    t_ilm_layer   layerIdArray[]   = {GDP_BACKGROUND_LAYER_ID, GDP_LAUNCHER_LAYER_ID, gdp_surface.id_layer};
+
+    switch(gdp_surface.id_surface) {
+        case QML_EXAMPLE_SURFACE_ID:         // QML Example
+system("touch /home/root/application.xxx");
+            callResult = ilm_surfaceSetSourceRectangle(
+                gdp_surface.id_surface, 0, 0, 600, 480);
+            break; 
+        case AM_DEMO_SURFACE_ID:             // Audio Manager Demo
+            callResult = ilm_surfaceSetSourceRectangle(
+                gdp_surface.id_surface, 0, 0, TOUCH_SCREEN_WIDTH, TOUCH_SCREEN_HEIGHT);
+            break; 
+        case BROWSER_POC_SURFACE_ID:         // Browser PoC
+            callResult = ilm_surfaceSetSourceRectangle(
+                gdp_surface.id_surface, 0, 0, TOUCH_SCREEN_WIDTH, TOUCH_SCREEN_HEIGHT);
+            break; 
+        case FSA_SURFACE_ID:                 // FSA PoC
+            callResult = ilm_surfaceSetSourceRectangle(
+                gdp_surface.id_surface, 0, 0, TOUCH_SCREEN_WIDTH, TOUCH_SCREEN_HEIGHT);
+            break; 
+        case MOCK_NAVIGATION_SURFACE_ID:     // EGL Mock Navigation
+            callResult = ilm_surfaceSetSourceRectangle(
+                gdp_surface.id_surface, 0, 0, 800, 480);
+            break; 
+        case INPUT_EVENT_EXAMPLE_SURFACE_ID: // EGL Input Example
+            callResult = ilm_surfaceSetSourceRectangle(
+                gdp_surface.id_surface, 0, 0, 400, 240);
+            break;
+        default:
+            sd_journal_print(LOG_DEBUG,
+                "surface_control - unknown surface.\n");
+            return;
+    }
+
+    callResult = ilm_surfaceSetDestinationRectangle(
+                gdp_surface.id_surface, 0, 0, screenWidth, screenHeight);
+    callResult = ilm_surfaceSetVisibility(
+                gdp_surface.id_surface, ILM_TRUE);
+    callResult = ilm_surfaceSetOpacity(
+                gdp_surface.id_surface, 1.0f);
+    callResult = ilm_commitChanges();
+    sd_journal_print(LOG_DEBUG, "surface_control - input focus on\n");
+
+    sd_journal_print(LOG_DEBUG, "surface_control - render order - layer\n");
+    callResult = ilm_layerSetDestinationRectangle(
+        gdp_surface.id_layer, 0, 0, 960, 1080);
+    callResult = ilm_layerSetOrientation(
+        gdp_surface.id_layer, ILM_NINETY);
+    callResult = ilm_layerSetRenderOrder(gdp_surface.id_layer, surfaceIdArray, 1);
+    callResult = ilm_layerSetVisibility(gdp_surface.id_layer, ILM_TRUE);
+    callResult = ilm_commitChanges();
+
+    sd_journal_print(LOG_DEBUG, "surface_control - render order - screen\n");
+    callResult = ilm_displaySetRenderOrder((t_ilm_display)screenID,
+                layerIdArray, 3);
+
+    callResult = ilm_commitChanges();
+    surface_mark_visible(index);
+
+    write_application_list_file(gdp_surface.id_layer);
+    system("/home/root/gdp_scripts/change-screen.sh 0");
+}
+
 /**
  * \brief control the IVI surface
  *
@@ -424,7 +568,8 @@ void surface_control(const int index)
             launcher_show(gdp_surface);
             break;
         case GDP_BACKGROUND_SURFACE_ID:      // Background / Logo
-            // fall-through
+            background_show(gdp_surface);
+            break;
         case QML_EXAMPLE_SURFACE_ID:         // QML Example
             // fall-through
         case AM_DEMO_SURFACE_ID:             // Audio Manager Demo
