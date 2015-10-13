@@ -489,6 +489,31 @@ static void application_show(const int index)
     t_ilm_surface surfaceIdArray[] = {gdp_surface.id_surface};
     t_ilm_layer   layerIdArray[]   = {GDP_BACKGROUND_LAYER_ID, GDP_LAUNCHER_LAYER_ID, gdp_surface.id_layer};
 
+    int i = 0;
+    int current_layer_id = 0;
+    int layer_num = 0;
+    t_ilm_layer* pArray = NULL;
+
+    ilm_getLayerIDsOnScreen(screenID, &layer_num, &pArray);
+    for (i = 0; i < layer_num; i++) {
+        if ((pArray[i] != GDP_BACKGROUND_LAYER_ID) && (pArray[i] != GDP_LAUNCHER_LAYER_ID)) {
+            current_layer_id = pArray[i];
+            break;
+        }
+    }
+    free(pArray);
+    
+    for (i = 0; i < gdp_surfaces_num; i++) {
+        if (gdp_surfaces[i].id_layer == current_layer_id)
+            break;
+    }
+
+    callResult = ilm_surfaceSetDestinationRectangle(
+                gdp_surfaces[i].id_surface, screenWidth / 2, screenHeight / 2, 1, 1);
+    callResult = ilm_commitChanges();
+
+    //sleep(1);
+
     switch(gdp_surface.id_surface) {
         case QML_EXAMPLE_SURFACE_ID:         // QML Example
             callResult = ilm_surfaceSetSourceRectangle(
@@ -521,12 +546,11 @@ static void application_show(const int index)
     }
 
     callResult = ilm_surfaceSetDestinationRectangle(
-                gdp_surface.id_surface, 0, 0, screenWidth, screenHeight);
-    callResult = ilm_surfaceSetVisibility(
-                gdp_surface.id_surface, ILM_TRUE);
+                gdp_surface.id_surface, screenWidth / 2, screenHeight / 2, 1, 1);
     callResult = ilm_surfaceSetOpacity(
                 gdp_surface.id_surface, 1.0f);
     callResult = ilm_commitChanges();
+    sleep(1);
     sd_journal_print(LOG_DEBUG, "surface_control - input focus on\n");
 
     sd_journal_print(LOG_DEBUG, "surface_control - render order - layer\n");
@@ -536,6 +560,12 @@ static void application_show(const int index)
         gdp_surface.id_layer, ILM_NINETY);
     callResult = ilm_layerSetRenderOrder(gdp_surface.id_layer, surfaceIdArray, 1);
     callResult = ilm_layerSetVisibility(gdp_surface.id_layer, ILM_TRUE);
+    callResult = ilm_commitChanges();
+
+    callResult = ilm_surfaceSetDestinationRectangle(
+                gdp_surface.id_surface, 0, 0, screenWidth, screenHeight);
+    callResult = ilm_surfaceSetVisibility(
+                gdp_surface.id_surface, ILM_TRUE);
     callResult = ilm_commitChanges();
 
     sd_journal_print(LOG_DEBUG, "surface_control - render order - screen\n");
