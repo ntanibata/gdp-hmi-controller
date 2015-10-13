@@ -62,7 +62,7 @@
 static int verbose                 = 0;
 static int gRunLoop                = 0;
 static GMainLoop* gMainLoop        = NULL;
-static t_ilm_uint screenID         = 0;
+static t_ilm_uint screenID         = 1;
 static t_ilm_uint screenWidth      = DEFAULT_SCREEN_WIDTH;
 static t_ilm_uint screenHeight     = DEFAULT_SCREEN_HEIGHT;
 static t_ilm_uint panelHeight      = DEFAULT_PANEL_HEIGHT_LR;
