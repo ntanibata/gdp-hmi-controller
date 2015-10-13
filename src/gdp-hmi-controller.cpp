@@ -345,17 +345,6 @@ static void launcher_show(const struct gdp_surface_context gdp_surface)
     callResult = ilm_surfaceSetOpacity(
         gdp_surface.id_surface, 1.0f);
     callResult = ilm_commitChanges();
-    sd_journal_print(LOG_DEBUG, "launcher_show - input focus on\n");
-    /*
-    callResult = ilm_UpdateInputEventAcceptanceOn(
-        gdp_surface.id_surface,
-        ILM_INPUT_DEVICE_POINTER |
-        ILM_INPUT_DEVICE_TOUCH   |
-        ILM_INPUT_DEVICE_KEYBOARD,
-        ILM_TRUE);
-    */
-    //callResult = ilm_SetKeyboardFocusOn(gdp_surface.id_surface);
-    callResult = ilm_commitChanges();
 
     sd_journal_print(LOG_DEBUG, "launcher_show - render order - layer\n");
     callResult = ilm_layerSetRenderOrder(gdp_surface.id_layer,
@@ -419,17 +408,7 @@ void surface_control(const int index)
             callResult = ilm_surfaceSetOpacity(
                 gdp_surface.id_surface, 1.0f);
             callResult = ilm_commitChanges();
-            sd_journal_print(LOG_DEBUG, "surface_control (0) - input focus on\n");
-            /*
-            callResult = ilm_UpdateInputEventAcceptanceOn(
-                gdp_surface.id_surface,
-                ILM_INPUT_DEVICE_POINTER |
-                ILM_INPUT_DEVICE_TOUCH   |
-                ILM_INPUT_DEVICE_KEYBOARD,
-                ILM_TRUE);
-            */
-            //callResult = ilm_SetKeyboardFocusOn(gdp_surface.id_surface);
-            callResult = ilm_commitChanges();
+
             sd_journal_print(LOG_DEBUG, "surface_control - render order - layer\n");
             callResult = ilm_layerSetDestinationRectangle(gdp_surface.id_layer,
                 0, screenHeight - panelHeight, screenWidth, panelHeight);
@@ -462,17 +441,6 @@ void surface_control(const int index)
                 gdp_surface.id_surface, ILM_TRUE);
             callResult = ilm_surfaceSetOpacity(
                 gdp_surface.id_surface, 1.0f);
-            callResult = ilm_commitChanges();
-            sd_journal_print(LOG_DEBUG, "surface_control - input focus on\n");
-            /*
-            callResult = ilm_UpdateInputEventAcceptanceOn(
-                gdp_surface.id_surface,
-                ILM_INPUT_DEVICE_POINTER |
-                ILM_INPUT_DEVICE_TOUCH   |
-                ILM_INPUT_DEVICE_KEYBOARD,
-                ILM_TRUE);
-            */
-            //callResult = ilm_SetKeyboardFocusOn(gdp_surface.id_surface);
             callResult = ilm_commitChanges();
 
             sd_journal_print(LOG_DEBUG, "surface_control - render order - layer\n");
