@@ -52,10 +52,12 @@
 
 // definitions
 
-#define DEFAULT_SCREEN_WIDTH      1024
-#define DEFAULT_SCREEN_HEIGHT      768
+#define DEFAULT_SCREEN_WIDTH      1920
+#define DEFAULT_SCREEN_HEIGHT     1080
 #define DEFAULT_PANEL_HEIGHT_LR     68  // low-res (default)
 #define DEFAULT_PANEL_HEIGHT_HR     80  // high-res
+#define TOUCH_SCREEN_WIDTH        1024
+#define TOUCH_SCREEN_HEIGHT        768
 
 // initialize global variables
 
