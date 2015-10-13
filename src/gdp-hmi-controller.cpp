@@ -183,6 +183,38 @@ int create_pid_file(const char *progName, const char *pidFile)
     return fd;
 }
 
+void write_application_list_file(const int new_layer_id)
+{
+    FILE *rfp;
+    FILE *wfp;
+    int rc = 0;
+    int layer_id = 0;
+    char str[32];
+ 
+    rfp = fopen("/var/run/applist", "rt");
+    if ( NULL == rfp) {
+        return;
+    }
+    wfp = fopen("/var/run/apptmp", "w+t");
+    if (NULL == wfp) {
+        fclose(rfp);
+        return;
+    }
+
+    while (fgets(str, sizeof(str), rfp) != 0) {
+        layer_id = atoi(str);
+        if (layer_id != new_layer_id)
+            rc = fputs(str, wfp);
+    }
+    sprintf(str, "%d\n", new_layer_id);
+    fputs(str, wfp);
+
+    fclose(rfp);
+    fclose(wfp);
+
+    rename("/var/run/apptmp", "/var/run/applist");
+}
+
 /**
  * \brief creates IVI layer
  *
@@ -225,7 +257,7 @@ static void layer_create(void)
             sd_journal_print(LOG_DEBUG, "Debug: Screen ID[%u] = %d\n",
                 i, pIDs[i]);
         }
-        screenID = 0;   // FIXME: always use screen with the ID 0
+        screenID = 1;   // FIXME: always use screen with the ID 0
                         // (limitation of ivi-shell at time of this writing)
     }
     sd_journal_print(LOG_INFO,
@@ -267,9 +299,9 @@ static void layer_create(void)
     // create all other layers - layer id's '100..700'
     for(layerid  = GDP_LAUNCHER_LAYER_ID; layerid < GDP_MAX_LAYER_ID;
         layerid += GDP_LAYER_ID_INCR) {
-        callResult = ilm_layerCreateWithDimension(&layerid, screenWidth,
-            (GDP_LAUNCHER_LAYER_ID == layerid) ?
-                screenHeight : (screenHeight - panelHeight));
+        callResult = ilm_layerCreateWithDimension(&layerid, screenWidth, screenHeight);
+            //(GDP_LAUNCHER_LAYER_ID == layerid) ?
+            //    screenHeight : (screenHeight - panelHeight));
         if (ILM_SUCCESS != callResult) {
             sd_journal_print(LOG_ERR,
                 "Error: layer_create (id = %u) - %s\n",
@@ -278,8 +310,8 @@ static void layer_create(void)
         } else {
             sd_journal_print(LOG_DEBUG,
                 "Debug: layer_create (id = %u) - %s (%u x %u)\n",
-                layerid, ILM_ERROR_STRING(callResult), screenWidth,
-                (100 == layerid)?screenHeight:(screenHeight - panelHeight));
+                layerid, ILM_ERROR_STRING(callResult), screenWidth, screenHeight);
+                //(100 == layerid)?screenHeight:(screenHeight - panelHeight));
         }
     } // for-loop
 
@@ -332,14 +364,14 @@ static void launcher_show(const struct gdp_surface_context gdp_surface)
 {
     ilmErrorTypes callResult = ILM_FAILED;
     t_ilm_surface surfaceIdArray[] = {GDP_LAUNCHER_SURFACE_ID};
-    t_ilm_layer   layerIdArray[]   = {GDP_LAUNCHER_LAYER_ID};
+    t_ilm_layer   layerIdArray[]   = {GDP_BACKGROUND_LAYER_ID, GDP_LAUNCHER_LAYER_ID};
 
     sd_journal_print(LOG_DEBUG, "launcher_show"
         "(surface = %u, layer = %u)\n",
         gdp_surface.id_surface, gdp_surface.id_layer);
 
-    surfaceIdArray[0] = gdp_surface.id_surface;
-    layerIdArray[0] = gdp_surface.id_layer;
+    callResult = ilm_surfaceSetSourceRectangle(
+        gdp_surface.id_surface, 0, 0, TOUCH_SCREEN_WIDTH, TOUCH_SCREEN_HEIGHT);
     callResult = ilm_surfaceSetDestinationRectangle(
         gdp_surface.id_surface, 0, 0, screenWidth, screenHeight);
     callResult = ilm_surfaceSetVisibility(
@@ -349,6 +381,10 @@ static void launcher_show(const struct gdp_surface_context gdp_surface)
     callResult = ilm_commitChanges();
 
     sd_journal_print(LOG_DEBUG, "launcher_show - render order - layer\n");
+    callResult = ilm_layerSetDestinationRectangle(
+        gdp_surface.id_layer, 959, 0, 961, 1080);
+    callResult = ilm_layerSetOrientation(
+        gdp_surface.id_layer, ILM_NINETY);
     callResult = ilm_layerSetRenderOrder(gdp_surface.id_layer,
         surfaceIdArray, 1);
     callResult = ilm_layerSetVisibility(gdp_surface.id_layer,
@@ -358,10 +394,16 @@ static void launcher_show(const struct gdp_surface_context gdp_surface)
     sd_journal_print(LOG_DEBUG, "launcher_show - render order - screen %u\n",
         screenID);
     callResult = ilm_displaySetRenderOrder((t_ilm_display)screenID,
-        layerIdArray, 1);
+        layerIdArray, 2);
 
     callResult = ilm_commitChanges();
     surface_mark_visible(GDP_LAUNCHER);
+
+    {
+        FILE *fp = fopen("/var/run/applist", "at");
+        if (fp)
+            fclose(fp);
+    }
 }
 
 static void background2_show()
@@ -393,9 +435,9 @@ static void background2_show()
     callResult = ilm_commitChanges();
 
     callResult = ilm_displaySetRenderOrder((t_ilm_display)0,
-         layerIdArray, 1);
- 
-     callResult = ilm_commitChanges();
+        layerIdArray, 1);
+
+    callResult = ilm_commitChanges();
 }
 
 static void background_show(const struct gdp_surface_context gdp_surface)
@@ -436,7 +478,7 @@ static void background_show(const struct gdp_surface_context gdp_surface)
         layerIdArray, 2);
 
     callResult = ilm_commitChanges();
-     surface_mark_visible(GDP_LAUNCHER);
+    surface_mark_visible(GDP_LAUNCHER);
     background2_show();
 }
 
@@ -449,7 +491,6 @@ static void application_show(const int index)
 
     switch(gdp_surface.id_surface) {
         case QML_EXAMPLE_SURFACE_ID:         // QML Example
-system("touch /home/root/application.xxx");
             callResult = ilm_surfaceSetSourceRectangle(
                 gdp_surface.id_surface, 0, 0, 600, 480);
             break; 
@@ -581,6 +622,8 @@ void surface_control(const int index)
         case MOCK_NAVIGATION_SURFACE_ID:     // EGL Mock Navigation
             // fall-through
         case INPUT_EVENT_EXAMPLE_SURFACE_ID: // EGL Input Example
+            application_show(index);
+#if 0
             callResult = ilm_surfaceSetDestinationRectangle(
                 gdp_surface.id_surface, 0, 0, screenWidth,
                 screenHeight - panelHeight);
@@ -603,6 +646,7 @@ void surface_control(const int index)
 
             callResult = ilm_commitChanges();
             surface_mark_visible(index);
+#endif
             break;
         default:
             sd_journal_print(LOG_DEBUG,
