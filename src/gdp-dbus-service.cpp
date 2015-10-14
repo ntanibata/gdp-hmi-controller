@@ -62,6 +62,7 @@ std::string HmiService::Show(const std::string &unit)
                 if (ILM_TRUE == gdp_surfaces[count].created) {
                     extern void surface_control(const int index);
                     // bring gdp_surfaces[count].id_surface to front
+                    sd_journal_print(LOG_DEBUG, "HmiService: call surface_control: %d\n", count);
                     surface_control(count);
                     sd_journal_print(LOG_DEBUG,
                         "HmiService::Show() - %s surface (%d) exists.\n",
