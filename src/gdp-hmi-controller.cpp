@@ -517,6 +517,14 @@ static void application_show(const int index)
             break;
     }
 
+    //if request application, surface id is already located in screen 1, do nothing
+    if(i==index)
+    {
+	sd_journal_print(LOG_DEBUG, "application_show: surface id %d is already located in screen1 below\n", index);
+        return;
+    }
+
+    sd_journal_print(LOG_DEBUG, "application_show: surface id is faded out\n", i);
     callResult = ilm_surfaceSetDestinationRectangle(
                 gdp_surfaces[i].id_surface, screenWidth / 2, screenHeight / 2, 1, 1);
     callResult = ilm_commitChanges();
