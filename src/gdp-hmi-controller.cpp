@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <dbus/dbus.h>
 #include <systemd/sd-journal.h>
+#include <pthread.h>
 
 #include <ilm/ilm_types.h>
 #include <ilm/ilm_client.h>
@@ -143,6 +144,8 @@ struct gdp_surface_context gdp_surfaces[] = {
     },
 };
 const int gdp_surfaces_num = sizeof gdp_surfaces / sizeof gdp_surfaces[0];
+
+pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * \brief creates a PID file
@@ -634,6 +637,8 @@ void surface_control(const int index)
         "(surface = %u, layer = %u)\n",
         index, gdp_surface.id_surface, gdp_surface.id_layer);
 
+pthread_mutex_lock(&m);
+
     surfaceIdArray[0] = gdp_surface.id_surface;
     layerIdArray[0] = gdp_surface.id_layer;
 
@@ -733,9 +738,11 @@ void surface_control(const int index)
         default:
             sd_journal_print(LOG_DEBUG,
                 "surface_control - unknown surface.\n");
-            return;
             break;
     } // switch
+
+    pthread_mutex_unlock(&m);
+    return;
 }
 
 #if 0
@@ -1121,6 +1128,8 @@ int main(int argc, char * const* argv)
             ILM_ERROR_STRING(callResult));
         exit(EXIT_FAILURE);
     }
+
+    pthread_mutex_destroy(&m);
 
     return EXIT_SUCCESS;
 }
