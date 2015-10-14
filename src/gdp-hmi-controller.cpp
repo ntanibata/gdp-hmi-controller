@@ -146,6 +146,8 @@ struct gdp_surface_context gdp_surfaces[] = {
 const int gdp_surfaces_num = sizeof gdp_surfaces / sizeof gdp_surfaces[0];
 
 pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+#define AM_MONITOR_ORIG_SOURCE_WIDTH 1926
+#define AM_MONITOR_ORIG_SOURCE_HEIGHT 1113
 
 /**
  * \brief creates a PID file
@@ -532,7 +534,7 @@ static void application_show(const int index)
             break; 
         case AM_DEMO_SURFACE_ID:             // Audio Manager Demo
             callResult = ilm_surfaceSetSourceRectangle(
-                gdp_surface.id_surface, 0, 0, 1926, 1113);
+                gdp_surface.id_surface, 0, 0, AM_MONITOR_ORIG_SOURCE_WIDTH, AM_MONITOR_ORIG_SOURCE_HEIGHT);
             break; 
         case BROWSER_POC_SURFACE_ID:         // Browser PoC
             callResult = ilm_surfaceSetSourceRectangle(
@@ -937,13 +939,21 @@ static void surfaceCallbackFunction(t_ilm_uint id, struct ilmSurfaceProperties* 
     sd_journal_print(LOG_DEBUG, "surfaceCallbackFunction START\n");
     if ((unsigned)m & ILM_NOTIFICATION_CONFIGURED)
     {
-        //configure_ilm_surface(id, sp->origSourceWidth, sp->origSourceHeight);
         for (int count = 0; count < gdp_surfaces_num; count++) {
             if (id == gdp_surfaces[count].id_surface) {
-               ilm_surfaceRemoveNotification(id);
-               gdp_surfaces[count].created = ILM_TRUE;
-               sd_journal_print(LOG_DEBUG, "surfaceCallbackFunction: remove notifcation and call surface_control: %d\n", count);
-               surface_control(count);
+               if(id!=20 || 
+                     (
+                      id==20 && 
+                      (sp->origSourceWidth == AM_MONITOR_ORIG_SOURCE_WIDTH) && 
+                      (sp->origSourceHeight == AM_MONITOR_ORIG_SOURCE_HEIGHT)
+                     )
+                 )
+               {
+		       ilm_surfaceRemoveNotification(id);
+		       gdp_surfaces[count].created = ILM_TRUE;
+		       sd_journal_print(LOG_DEBUG, "surfaceCallbackFunction: remove notifcation and call surface_control: %d\n", count);
+		       surface_control(count);
+               }
            }
         }
     }
@@ -956,7 +966,7 @@ static void callbackFunction(ilmObjectType object, t_ilm_uint id, t_ilm_bool cre
     struct ilmSurfaceProperties sp;
 
     if (object == ILM_SURFACE) {
-        if (created) {
+        if (created && id != 20) { // not AM_Monitor. This is tricky way. because AM_monitor seems to resize the original size in starting phase
             sd_journal_print(LOG_DEBUG, "callbackFunction: surface is created: id %d\n", id);
             ilm_getPropertiesOfSurface(id, &sp);
             sd_journal_print(LOG_DEBUG, "callbackFunction: surface original source size: %d,%d\n", sp.origSourceWidth, sp.origSourceHeight);
