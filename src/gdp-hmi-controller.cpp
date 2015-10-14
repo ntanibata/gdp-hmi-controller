@@ -922,8 +922,10 @@ static void surfaceCallbackFunction(t_ilm_uint id, struct ilmSurfaceProperties* 
         //configure_ilm_surface(id, sp->origSourceWidth, sp->origSourceHeight);
         for (int count = 0; count < gdp_surfaces_num; count++) {
             if (id == gdp_surfaces[count].id_surface) {
+               ilm_surfaceRemoveNotification(id);
+               ilm_commitChanges();
                gdp_surfaces[count].created = ILM_TRUE;
-               sd_journal_print(LOG_DEBUG, "surfaceCallbackFunction: call surface_control: %d\n", count);
+               sd_journal_print(LOG_DEBUG, "surfaceCallbackFunction: remove notifcation and call surface_control: %d\n", count);
                surface_control(count);
            }
         }
