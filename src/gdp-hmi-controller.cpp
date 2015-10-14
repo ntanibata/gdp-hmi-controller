@@ -186,7 +186,6 @@ int create_pid_file(const char *progName, const char *pidFile)
     return fd;
 }
 
-/*
 void write_application_list_file(const int new_layer_id)
 {
     FILE *rfp;
@@ -218,7 +217,6 @@ void write_application_list_file(const int new_layer_id)
 
     rename("/var/run/apptmp", "/var/run/applist");
 }
-*/
 
 /**
  * \brief creates IVI layer
@@ -624,7 +622,7 @@ static void application_show(const int index)
     surface_mark_visible(index);
 
     sd_journal_print(LOG_DEBUG, "application_show - end %d\n",index);
-//   write_application_list_file(gdp_surface.id_layer);
+    write_application_list_file(gdp_surface.id_layer);
 }
 
 /**
