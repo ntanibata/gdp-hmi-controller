@@ -698,6 +698,7 @@ pthread_mutex_lock(&m);
             // stopping first view of mlink
             if (is_fsa_first) {
                 is_fsa_first = false;
+                sd_journal_print(LOG_DEBUG, "surface_control: hacking fsa surface id for mlink\n");
                 break;
             }
             application_show(index);
