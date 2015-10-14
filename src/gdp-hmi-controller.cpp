@@ -186,6 +186,7 @@ int create_pid_file(const char *progName, const char *pidFile)
     return fd;
 }
 
+/*
 void write_application_list_file(const int new_layer_id)
 {
     FILE *rfp;
@@ -217,6 +218,7 @@ void write_application_list_file(const int new_layer_id)
 
     rename("/var/run/apptmp", "/var/run/applist");
 }
+*/
 
 /**
  * \brief creates IVI layer
@@ -524,14 +526,7 @@ static void application_show(const int index)
         return;
     }
 
-    sd_journal_print(LOG_DEBUG, "application_show: surface id is faded out\n", i);
-    callResult = ilm_surfaceSetDestinationRectangle(
-                gdp_surfaces[i].id_surface, screenWidth / 2, screenHeight / 2, 1, 1);
-    callResult = ilm_commitChanges();
-    t_ilm_layer   layerIdArray2[] = {GDP_BACKGROUND2_LAYER_ID, gdp_surfaces[i].id_layer};
-
-    //sleep(1);
-
+    //set source rect of invoked application
     switch(gdp_surface.id_surface) {
         case QML_EXAMPLE_SURFACE_ID:         // QML Example
             callResult = ilm_surfaceSetSourceRectangle(
@@ -559,55 +554,77 @@ static void application_show(const int index)
             break;
         default:
             sd_journal_print(LOG_DEBUG,
-                "surface_control - unknown surface.\n");
+                "application_show - unknown surface.\n");
             return;
     }
 
+    /****************************************************/
+    t_ilm_layer   layerIdArray2[] = {GDP_BACKGROUND2_LAYER_ID, gdp_surfaces[i].id_layer};
+
+    //fade out an application from screen 1
+    sd_journal_print(LOG_DEBUG, "application_show: surface id %d is faded out\n", i);
+    callResult = ilm_surfaceSetDestinationRectangle(
+                gdp_surfaces[i].id_surface, screenWidth / 2, screenHeight / 2, 1, 1);
+
+    //preparation to fade in of invoked an application
     callResult = ilm_surfaceSetDestinationRectangle(
                 gdp_surface.id_surface, screenWidth / 2, screenHeight / 2, 1, 1);
     callResult = ilm_surfaceSetOpacity(
                 gdp_surface.id_surface, 1.0f);
-    callResult = ilm_commitChanges();
-    sleep(1);
-    sd_journal_print(LOG_DEBUG, "surface_control - input focus on\n");
 
-    sd_journal_print(LOG_DEBUG, "surface_control - render order - layer\n");
+    sd_journal_print(LOG_DEBUG, "application_show: - render order - layer %d\n",gdp_surface.id_layer);
     callResult = ilm_layerSetDestinationRectangle(
         gdp_surface.id_layer, 0, 0, 960, 1080);
     callResult = ilm_layerSetOrientation(
         gdp_surface.id_layer, ILM_NINETY);
     callResult = ilm_layerSetRenderOrder(gdp_surface.id_layer, surfaceIdArray, 1);
     callResult = ilm_layerSetVisibility(gdp_surface.id_layer, ILM_TRUE);
+
+    sd_journal_print(LOG_DEBUG, "application_show - render order - screen remove%d\n",screenID);
+    callResult = ilm_displaySetRenderOrder((t_ilm_display)screenID,
+                layerIdArray, 2);
+
+    sd_journal_print(LOG_DEBUG, "application_show: fade in to screen1,layer remove %d \n", gdp_surfaces[i].id_layer);
+    callResult = ilm_layerSetDestinationRectangle(gdp_surfaces[i].id_layer,
+                0, 0, screenWidth, screenHeight);
+    callResult = ilm_layerSetOrientation(gdp_surfaces[i].id_layer, ILM_ZERO);
+    callResult = ilm_displaySetRenderOrder((t_ilm_display)0, layerIdArray2, 1);
+
     callResult = ilm_commitChanges();
 
-    callResult = ilm_surfaceSetDestinationRectangle(
-                gdp_surface.id_surface, 0, 0, screenWidth, screenHeight);
-    callResult = ilm_surfaceSetVisibility(
-                gdp_surface.id_surface, ILM_TRUE);
-    callResult = ilm_commitChanges();
-
-    sd_journal_print(LOG_DEBUG, "surface_control - render order - screen\n");
+    //
+    sd_journal_print(LOG_DEBUG, "application_show - render order - screen add %d\n",screenID);
     callResult = ilm_displaySetRenderOrder((t_ilm_display)screenID,
                 layerIdArray, 3);
 
-    callResult = ilm_commitChanges();
-
-    //moov screen1 to screen0
+    sd_journal_print(LOG_DEBUG, "application_show: fade in to screen1,layer add %d \n", gdp_surfaces[i].id_layer);
     callResult = ilm_layerSetDestinationRectangle(gdp_surfaces[i].id_layer,
                 0, 0, screenWidth, screenHeight);
     callResult = ilm_layerSetOrientation(gdp_surfaces[i].id_layer, ILM_ZERO);
     callResult = ilm_displaySetRenderOrder((t_ilm_display)0, layerIdArray2, 2);
+
     callResult = ilm_commitChanges();
 
+    //fade in of invoked applicaitons
+    sd_journal_print(LOG_DEBUG, "application_show: fade in to surface %d \n", gdp_surface.id_surface);
+    callResult = ilm_surfaceSetDestinationRectangle(
+                gdp_surface.id_surface, 0, 0, screenWidth, screenHeight);
+    callResult = ilm_surfaceSetVisibility(
+                gdp_surface.id_surface, ILM_TRUE);
+
+    sd_journal_print(LOG_DEBUG, "application_show: fade in to surface %d \n", gdp_surfaces[i].id_surface);
     callResult = ilm_surfaceSetDestinationRectangle(
                 gdp_surfaces[i].id_surface, 0, 0, screenWidth, screenHeight);
     callResult = ilm_surfaceSetVisibility(
                 gdp_surfaces[i].id_surface, ILM_TRUE);
+
     callResult = ilm_commitChanges();
+    /****************************************************/
 
     surface_mark_visible(index);
 
-    write_application_list_file(gdp_surface.id_layer);
+    sd_journal_print(LOG_DEBUG, "application_show - end %d\n",index);
+//   write_application_list_file(gdp_surface.id_layer);
 }
 
 /**
@@ -751,6 +768,9 @@ pthread_mutex_lock(&m);
     } // switch
 
     pthread_mutex_unlock(&m);
+    sd_journal_print(LOG_DEBUG, "surface_control End - index = %d"
+        "(surface = %u, layer = %u)\n",
+        index, gdp_surface.id_surface, gdp_surface.id_layer);
     return;
 }
 
@@ -923,7 +943,6 @@ static void surfaceCallbackFunction(t_ilm_uint id, struct ilmSurfaceProperties* 
         for (int count = 0; count < gdp_surfaces_num; count++) {
             if (id == gdp_surfaces[count].id_surface) {
                ilm_surfaceRemoveNotification(id);
-               ilm_commitChanges();
                gdp_surfaces[count].created = ILM_TRUE;
                sd_journal_print(LOG_DEBUG, "surfaceCallbackFunction: remove notifcation and call surface_control: %d\n", count);
                surface_control(count);
